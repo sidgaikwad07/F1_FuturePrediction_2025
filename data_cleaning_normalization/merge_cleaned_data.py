@@ -1,39 +1,54 @@
 """
-Created on Mon May 19 11:00:04 2025
+Created on Tue May 20 10:15:04 2025
 
 @author: sid
-Combine the yearly features from the year (2021-2025)
+Merge Cleaned F1 Data (2021–2025)
+- Adds Year column
+- Stacks all sessions including FP, Q, R, S
+- Outputs full unified dataset
+
 """
 import os
 import pandas as pd
 
-# === CONFIG ===
-CLEANED_PATH = "/Users/sid/Downloads/F1_FuturePrediction_2025/clean_data"
-YEARS = [2021, 2022, 2023, 2024, 2025]
-SAVE_PATH = os.path.join(CLEANED_PATH, "merged_cleaned_2021_2025.csv")
+def merge_cleaned_data(input_dir, output_file, years=(2021, 2022, 2023, 2024, 2025)):
+    """
+    Merge cleaned F1 data across multiple years.
 
-# === Load and concatenate
-def merge_all_cleaned_years():
+    Parameters:
+    - input_dir: folder path containing individual year CSVs
+    - output_file: full path to save merged CSV
+    - years: tuple of years to merge
+    """
     all_dfs = []
 
-    for year in YEARS:
-        file_path = os.path.join(CLEANED_PATH, f"{year}_cleaned.csv")
-        if os.path.exists(file_path):
-            print(f"📂 Loading {year}_cleaned.csv...")
-            df = pd.read_csv(file_path)
-            df['Season'] = year  # Add season indicator
-            all_dfs.append(df)
-        else:
-            print(f" Missing file for {year}: {file_path}")
+    for year in years:
+        filename = f"{year}_cleaned.csv"
+        path = os.path.join(input_dir, filename)
+        if not os.path.exists(path):
+            print(f"⚠️ Missing: {filename}")
+            continue
+
+        df = pd.read_csv(path, low_memory=False)
+        df["Year"] = year
+        all_dfs.append(df)
+        print(f"✅ Loaded: {filename} ({len(df)} rows)")
 
     if not all_dfs:
-        print("⛔ No cleaned datasets found. Check file paths.")
+        print(" No data loaded.")
         return
 
     merged_df = pd.concat(all_dfs, ignore_index=True)
-    merged_df.to_csv(SAVE_PATH, index=False)
-    print(f"\n✅ Merged dataset saved to:\n{SAVE_PATH}")
-    print(f"🔢 Total rows: {len(merged_df)} | Total columns: {merged_df.shape[1]}")
 
+    # Overview
+    print("\n📊 Session Count:")
+    print(merged_df["Session"].value_counts())
+
+    merged_df.to_csv(output_file, index=False)
+    print(f"\n✅ Merged dataset saved to:\n{output_file}")
+
+# === Example Usage ===
 if __name__ == "__main__":
-    merge_all_cleaned_years()
+    input_folder = "/Users/sid/Downloads/F1_FuturePrediction_2025/clean_data"
+    output_path = os.path.join(input_folder, "merged_cleaned_2021_2025.csv")
+    merge_cleaned_data(input_folder, output_path)
